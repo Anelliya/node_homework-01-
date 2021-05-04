@@ -1,29 +1,31 @@
+import { fdatasync } from "fs";
 import path from "path";
-import fs, { fdatasync } from "fs";
+//import fs, { fdatasync } from "fs";
 import uniqid from "uniqid";
-// import { promises as fs } from "fs";
+import { promises as fs } from "fs";
 
 const contactsPath = path.join("db", "contacts.json");
 
-function listContacts() {
-  fs.readFile(contactsPath, "utf-8", (err, data) => {
-    if (err) {
-      console.log("err:", err);
-      return;
-    }
-    const parsedContactsList = JSON.parse(data);
+async function listContacts() {
+  try {
+    const contactsJson = await fs.readFile(contactsPath, "utf-8");
+    const parsedContactsList = await JSON.parse(contactsJson);
     return console.table(parsedContactsList);
-  });
+  } catch (err) {
+    console.error(err);
+  }
+
+  await fs
+    .readFile(contactsPath, "utf-8")
+    .then((contactsJson) => console.table(JSON.parse(contactsJson)))
+    .catch((err) => console.error(err));
 }
 
-function getContactById(contactId) {
-  fs.readFile(contactsPath, "utf-8", (err, data) => {
-    if (err) {
-      console.log(err.message);
-      return;
-    }
-    const parsedContactsList = JSON.parse(data);
-    const foundContact = parsedContactsList.find(
+async function getContactById(contactId) {
+  try {
+    const contactsJson = await fs.readFile(contactsPath, "utf-8");
+    const parsedContactsList = await JSON.parse(contactsJson);
+    const foundContact = await parsedContactsList.find(
       (contact) => String(contact.id) === String(contactId)
     );
     if (!foundContact) {
@@ -31,58 +33,48 @@ function getContactById(contactId) {
       return;
     }
     return console.log(foundContact);
-  });
+  } catch (err) {
+    console.error(err);
+  }
 }
 
-function removeContact(contactId) {
-  fs.readFile(contactsPath, "utf-8", (err, data) => {
-    if (err) {
-      console.log(err.message);
-      return;
-    }
-    const parsedContactsList = JSON.parse(data);
-    const checkedContactById = parsedContactsList.find(
+async function removeContact(contactId) {
+  try {
+    const contactsJson = await fs.readFile(contactsPath, "utf-8");
+    const parsedContactsList = await JSON.parse(contactsJson);
+    const checkedContactById = await parsedContactsList.find(
       (contact) => String(contact.id) === String(contactId)
     );
 
-    console.log(checkedContactById);
     if (!checkedContactById) {
       console.log("This contact isn't in the list");
       return;
     }
-
-    const updatedContactsList = parsedContactsList.filter(
+    const updatedContactsList = await parsedContactsList.filter(
       (contact) => String(contact.id) !== String(contactId)
     );
-
     if (parsedContactsList !== updatedContactsList) {
+      console.log("i am in");
       const newData = JSON.stringify(updatedContactsList);
-
-      fs.writeFile(contactsPath, newData, (err) => {
-        console.log("Contact has been successfully deleted");
-        listContacts();
-
-        if (err) {
-          console.log(err.message);
-          return;
-        }
-      });
+      await fs.writeFile(contactsPath, newData);
+      console.log("Contact has been successfully deleted");
+      listContacts();
     }
-  });
+  } catch (err) {
+    console.error(err);
+  }
 }
 
-function addContact(name, email, phone) {
-  fs.readFile(contactsPath, "utf-8", (err, data) => {
-    if (err) {
-      console.log(err);
-      return;
-    }
-    const parsedContactList = JSON.parse(data);
+async function addContact(name, email, phone) {
+  try {
+    const contactsJson = await fs.readFile(contactsPath, "utf-8");
+    const parsedContactList = await JSON.parse(contactsJson);
 
     if (!name || !email || !phone) {
       console.log("the data is not full");
       return;
     }
+
     const newContact = {
       id: uniqid(),
       name,
@@ -92,15 +84,12 @@ function addContact(name, email, phone) {
 
     parsedContactList.push(newContact);
 
-    fs.writeFile(contactsPath, JSON.stringify(parsedContactList), (err) => {
-      if (err) {
-        console.log(err);
-        return;
-      }
-      console.log("contact was succesful added");
-      listContacts();
-    });
-  });
+    await fs.writeFile(contactsPath, JSON.stringify(parsedContactList));
+    console.log("contact was succesful added");
+    listContacts();
+  } catch (err) {
+    (err) => console.error(err);
+  }
 }
 
 export const fn = {
