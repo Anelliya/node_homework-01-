@@ -14,11 +14,6 @@ async function listContacts() {
   } catch (err) {
     console.error(err);
   }
-
-  await fs
-    .readFile(contactsPath, "utf-8")
-    .then((contactsJson) => console.table(JSON.parse(contactsJson)))
-    .catch((err) => console.error(err));
 }
 
 async function getContactById(contactId) {
